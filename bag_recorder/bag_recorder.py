@@ -4,6 +4,9 @@ from rclpy.serialization import serialize_message
 from std_srvs.srv import Trigger
 from std_msgs.msg import String, Int32
 
+import importlib
+
+
 import rosbag2_py
 from datetime import datetime
 import time
@@ -19,9 +22,36 @@ class BagRecorder(Node):
     def __init__(self):
         super().__init__('bag_recorder')
 
+
         self.topics = []
-        self.topics.append(Topic("test","std_msgs/msg/String", String))
-        self.topics.append(Topic("test2","std_msgs/msg/Int32", Int32))
+
+
+
+
+
+
+
+
+        topic_list = self.get_topic_names_and_types()
+        for info in topic_list:
+            self.get_logger().info(f"{info[0]}")
+            self.get_logger().info(f"{info[1][0]}")
+
+            p, m = info[1][0].rsplit('/', 1)
+            
+            mod = importlib.import_module(p.replace("/","."))
+            met = getattr(mod, m)
+
+            self.topics.append(Topic(info[0],info[1],met))
+
+        # self.topics.append(Topic("test","std_msgs/msg/String", String))
+        # self.topics.append(Topic("test2","std_msgs/msg/Int32", Int32))
+
+
+
+
+
+
 
         self.is_recording = False
         self.bag = None
@@ -42,7 +72,8 @@ class BagRecorder(Node):
         else:
             self.stop()
             response.message = f"Finished recording to {self.bag}"
-        
+            self.get_logger().info('Stopped recording bag.')
+
         response.success=True
         return response
 
