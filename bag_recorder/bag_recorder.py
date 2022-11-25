@@ -66,6 +66,8 @@ class BagRecorder(Node):
 
         topic_list = self.get_topic_names_and_types()
 
+        excluded_messages=["rosbridge_msgs"]
+
         def create_topic_subscribers(topic):
             self.get_logger().info(f"{topic[0]}")
 
@@ -74,20 +76,26 @@ class BagRecorder(Node):
             message_class = getattr(module, message)
 
             topic = Topic(topic[0],topic[1][0],message_class)
-            topic_callback = lambda msg : self.record_message(name=topic.name, msg=msg) 
-            topic_subscription = self.create_subscription(topic.type, topic.name, topic_callback, 10)
 
-            topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
-            self.writer.create_topic(topic_info)
 
-            return topic_subscription
+            self.get_logger().info(f"{topic.name}, {topic.type_str}, {topic.name}")
+
+            if topic.type not in excluded_messages:
+
+                
+
+                topic_callback = lambda msg : self.record_message(name=topic.name, msg=msg) 
+                topic_subscription = self.create_subscription(topic.type, topic.name, topic_callback, 10)
+
+                topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
+                self.writer.create_topic(topic_info)
+
+                return topic_subscription
+
+            else:
+                return
 
         self.topic_subscribers = list(map(create_topic_subscribers, topic_list))
-
-
-        # for topic in self.topics:
-        #     topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
-        #     self.writer.create_topic(topic_info)
 
         self.is_recording = True
 
@@ -95,7 +103,7 @@ class BagRecorder(Node):
     def stop(self):
         del self.writer
         del self.topic_subscribers
-        
+
         self.is_recording = False
 
 
