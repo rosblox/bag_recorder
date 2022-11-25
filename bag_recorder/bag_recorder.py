@@ -22,47 +22,18 @@ class BagRecorder(Node):
     def __init__(self):
         super().__init__('bag_recorder')
 
-
-        self.topics = []
-
-
-
-
-
-
-
-
-        topic_list = self.get_topic_names_and_types()
-        for info in topic_list:
-            self.get_logger().info(f"{info[0]}")
-            self.get_logger().info(f"{info[1][0]}")
-
-            p, m = info[1][0].rsplit('/', 1)
-            
-            mod = importlib.import_module(p.replace("/","."))
-            met = getattr(mod, m)
-
-            self.topics.append(Topic(info[0],info[1],met))
-
-        # self.topics.append(Topic("test","std_msgs/msg/String", String))
-        # self.topics.append(Topic("test2","std_msgs/msg/Int32", Int32))
-
-
-
-
-
-
-
         self.is_recording = False
         self.bag = None
 
-        for topic in self.topics:
-            topic_callback = lambda msg : self.record_message(name=topic.name, msg=msg) 
-            self.subscription = self.create_subscription(topic.type, topic.name, topic_callback, 10)
-
         self.srv = self.create_service(Trigger, '~/trigger', self.callback)
 
-        self.get_logger().info('My log message 1')
+        self.get_logger().info('Bag recorder initialized')
+
+
+
+
+
+
 
 
     def callback(self, request: Trigger.Request, response: Trigger.Response):
@@ -92,15 +63,39 @@ class BagRecorder(Node):
         converter_options = rosbag2_py._storage.ConverterOptions('', '')
         self.writer.open(storage_options, converter_options)
 
-        for topic in self.topics:
+
+        topic_list = self.get_topic_names_and_types()
+
+        def create_topic_subscribers(topic):
+            self.get_logger().info(f"{topic[0]}")
+
+            module, message = topic[1][0].replace("/",".").rsplit('.', 1)
+            module = importlib.import_module(module)
+            message_class = getattr(module, message)
+
+            topic = Topic(topic[0],topic[1][0],message_class)
+            topic_callback = lambda msg : self.record_message(name=topic.name, msg=msg) 
+            topic_subscription = self.create_subscription(topic.type, topic.name, topic_callback, 10)
+
             topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
             self.writer.create_topic(topic_info)
+
+            return topic_subscription
+
+        self.topic_subscribers = list(map(create_topic_subscribers, topic_list))
+
+
+        # for topic in self.topics:
+        #     topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
+        #     self.writer.create_topic(topic_info)
 
         self.is_recording = True
 
 
     def stop(self):
         del self.writer
+        del self.topic_subscribers
+        
         self.is_recording = False
 
 
