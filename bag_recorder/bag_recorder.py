@@ -64,7 +64,7 @@ class BagRecorder(Node):
         self.bag = f"bag_{now.strftime('%Y_%m_%d_%H_%M_%S')}"
         uri = f"/bags/{self.bag}"
         self.writer = rosbag2_py.SequentialWriter()
-        storage_options = rosbag2_py._storage.StorageOptions(uri=uri,storage_id='sqlite3')
+        storage_options = rosbag2_py._storage.StorageOptions(uri=uri,storage_id='sqlite3',max_bagfile_size=300000000)
         converter_options = rosbag2_py._storage.ConverterOptions('', '')
         self.writer.open(storage_options, converter_options)
 
