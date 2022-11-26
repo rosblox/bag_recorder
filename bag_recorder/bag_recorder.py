@@ -10,6 +10,7 @@ import importlib
 import rosbag2_py
 from datetime import datetime
 import time
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 
 class Topic():
     def __init__(self, name: str, type_str: str, type):
@@ -32,7 +33,11 @@ class BagRecorder(Node):
 
 
 
-
+        self.qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
 
 
 
@@ -66,10 +71,8 @@ class BagRecorder(Node):
 
         topic_list = self.get_topic_names_and_types()
 
-        excluded_messages=["rosbridge_msgs"]
-
         def create_topic_subscribers(topic):
-            self.get_logger().info(f"{topic[0]}")
+            # self.get_logger().info(f"{topic[0]}")
 
             module, message = topic[1][0].replace("/",".").rsplit('.', 1)
             module = importlib.import_module(module)
@@ -77,22 +80,48 @@ class BagRecorder(Node):
 
             topic = Topic(topic[0],topic[1][0],message_class)
 
+            included_topics = [
+            "/zed2i/zed_node/right_raw/camera_info",
+            "/zed2i/zed_node/right_raw/image_raw_color/compressed",
 
-            self.get_logger().info(f"{topic.name}, {topic.type_str}, {topic.name}")
+            "/zed2i/zed_node/left_raw/camera_info",
+            "/zed2i/zed_node/left_raw/image_raw_color/compressed",
 
-            if topic.type not in excluded_messages:
+            "/zed2i/zed_node/imu/mag",
+            "/zed2i/zed_node/imu/data_raw",
+            "/zed2i/zed_node/temperature/imu",
 
-                
+            "/vortex/set_propeller_setpoint",
+            "/vortex/present_tether_length",
+            "/pixhawk/setpoint",
 
+            "/dynamixel/set_velocity",
+            "/dynamixel/present_position",
+
+            "/fmu/out/SensorCombined",
+            "/fmu/out/VehicleOdometry",
+            "/fmu/in/ActuatorMotors",
+
+            "/joy",
+            "/livox/lidar",
+
+
+
+            ]
+
+
+            if  topic.name in included_topics:
+
+                self.get_logger().info(f"{topic.name}, {topic.type_str}, {topic.name}")
                 topic_callback = lambda msg : self.record_message(name=topic.name, msg=msg) 
-                topic_subscription = self.create_subscription(topic.type, topic.name, topic_callback, 10)
+                topic_subscription = self.create_subscription(topic.type, topic.name, topic_callback,qos_profile=self.qos_profile)
 
                 topic_info = rosbag2_py._storage.TopicMetadata(name=topic.name, type=topic.type_str, serialization_format='cdr')
                 self.writer.create_topic(topic_info)
 
                 return topic_subscription
-
             else:
+                
                 return
 
         self.topic_subscribers = list(map(create_topic_subscribers, topic_list))
