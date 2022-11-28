@@ -87,10 +87,6 @@ class BagRecorder(Node):
             "/zed2i/zed_node/left_raw/camera_info",
             "/zed2i/zed_node/left_raw/image_raw_color/compressed",
 
-            "/zed2i/zed_node/imu/mag",
-            "/zed2i/zed_node/imu/data_raw",
-            "/zed2i/zed_node/temperature/imu",
-
             "/vortex/set_propeller_setpoint",
             "/vortex/present_tether_length",
             "/pixhawk/setpoint",
@@ -102,10 +98,7 @@ class BagRecorder(Node):
             "/fmu/out/VehicleOdometry",
             "/fmu/in/ActuatorMotors",
 
-            "/joy",
             "/livox/lidar",
-
-
 
             ]
 
