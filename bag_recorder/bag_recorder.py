@@ -26,7 +26,7 @@ class BagRecorder(Node):
         self.is_recording = False
         self.bag = None
 
-        self.srv = self.create_service(Trigger, '~/trigger', self.callback)
+        # self.srv = self.create_service(Trigger, '~/trigger', self.callback)
 
         self.get_logger().info('Bag recorder initialized')
 
@@ -39,19 +39,20 @@ class BagRecorder(Node):
             depth=1
         )
 
+        self.start()
 
 
-    def callback(self, request: Trigger.Request, response: Trigger.Response):
-        if not self.is_recording:
-            self.start()
-            response.message = f"Recording to {self.bag}"
-        else:
-            self.stop()
-            response.message = f"Finished recording to {self.bag}"
-            self.get_logger().info('Stopped recording bag.')
+    # def callback(self, request: Trigger.Request, response: Trigger.Response):
+    #     if not self.is_recording:
+    #         self.start()
+    #         response.message = f"Recording to {self.bag}"
+    #     else:
+    #         self.stop()
+    #         response.message = f"Finished recording to {self.bag}"
+    #         self.get_logger().info('Stopped recording bag.')
 
-        response.success=True
-        return response
+    #     response.success=True
+    #     return response
 
 
     def record_message(self, name, msg):
@@ -81,12 +82,10 @@ class BagRecorder(Node):
             topic = Topic(topic[0],topic[1][0],message_class)
 
             included_topics = [
-            "/zed2i/zed_node/right_raw/camera_info",
             "/zed2i/zed_node/right_raw/image_raw_color/compressed",
-
-            "/zed2i/zed_node/left_raw/camera_info",
             "/zed2i/zed_node/left_raw/image_raw_color/compressed",
-
+            "/zed2i/zed_node/odom",
+            
             "/vortex/set_propeller_setpoint",
             "/vortex/present_tether_length",
             "/pixhawk/setpoint",
